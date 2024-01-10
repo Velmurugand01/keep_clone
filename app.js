@@ -47,8 +47,8 @@ app.post('/signUp',async(req,res)=>{
     ...req.body
 })
 
-// const{emailOrPhone}=req.body
-const email= await schema.findOne(req.body.emailOrphone)
+ const{emailOrPhone}=req.body
+const email= await schema.findOne({emailOrPhone})
 if(email){
   return  res.send("You Have Already Account")
 }
@@ -78,12 +78,15 @@ app.post('/login',async(req,res)=>{
   }
 
    
-      const jsonwebtoken=jwt.sign({id:verifyEmail._id,emailOrPhone:verifyEmail.emailOrPhone},process.env.secret_key,{expiresIn:"7d"})
+      const jsonwebtoken=jwt.sign({id:verifyEmail._id,emailOrPhone:verifyEmail.emailOrPhone},process.env.secret_key,{expiresIn:"3h"})
      res.cookie("jwt",jsonwebtoken,{httpOnly:true})
   
     res.json("Login Sucessfullly")
 
 
+})
+app.post('/forgot',async(req,res)=>{
+    
 })
 // post data 
 // app.post('/postData',verifyToken,upload.single('image'),async(req,res)=>{
@@ -133,16 +136,14 @@ app.post('/postData', verifyToken, upload.single('image'), async (req, res) => {
             imageUrl: result.url,
             userId: req.verifyEmail.id,
             Title: req.body.Title,
-            Price: req.body.Price,
-            Description: req.body.Description,
-            Category: req.body.Category,
-            Availability: req.body.Availability
+           
         });
 
        
             await details.save()
             .then(()=>{
                 res.status(200).json({ message: 'Details saved successfully',info:details });
+                console.log(details);
             })
             .catch(()=>{
                 res.status(500).json({ message: "Something went wrong while saving data" });
@@ -152,20 +153,57 @@ app.post('/postData', verifyToken, upload.single('image'), async (req, res) => {
 });
 
 // get Data
-app.get('/getData',verifyToken,async(req,res)=>{
-    const{emailOrPhone}=req.verifyEmail.emailOrPhone
-    const getData=await schema_2.find({emailOrPhone})
+// app.get('/getData',verifyToken,async(req,res)=>{
+//     const id=req.verifyEmail.userId
+//     const getData=await schema_2.find({id})
 
-    res.json({message:"Data Fetching successfully" ,data:getData})
-    console.log(getData);
-})
+//     res.json({message:"Data Fetching successfully" ,data:getData})
+//     console.log(getData);
+// })
+
+app.get('/getData', verifyToken, async (req, res) => {
+    const userId = req.verifyEmail.id; // Assuming `id` is the correct field in the `verifyEmail` object
+
+    try {
+        const getData = await schema_2.find({ userId }); // Finding data based on userId
+
+        res.json({ message: "Data fetched successfully", data: getData });
+        console.log(getData);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch data" });
+    }
+});
+
 
 // Ubdate Data
-app.put('/ubdateData/:id',verifyToken,async(req,res)=>{
-   const ubdateData=await schema_2.findByIdAndUpdate(req.params.id,{$set:req.body},{new:true})
-   res.json(ubdateData)
-})
-
+// app.put('/ubdateData/:id',verifyToken,async(req,res)=>{
+//    const ubdateData=await schema_2.findByIdAndUpdate(req.params.id,{$set:req.body},{new:true})
+//    // {set:req.body}=> // New data to update (received from the request body)
+//    //req.params.id =>ID of the document to be updated
+//    res.json(ubdateData)
+// })
+app.put('/ubdateData/:id', verifyToken, async (req, res) => {
+    try {
+       const existingData = await schema_2.findOne({ _id: req.params.id });
+ 
+       if (!existingData) {
+          return res.status(404).json({ message: 'Data not found for the given ID.' });
+       }
+ 
+       const updatedData = await schema_2.findByIdAndUpdate(
+          req.params.id,
+          { $set: req.body },
+          { new: true }
+       );
+ 
+       res.json(updatedData); // Send updated data as JSON response
+    } catch (error) {
+       console.error('Update Error:', error); // Log the specific error that occurred
+       res.status(500).json({ message: 'Internal server error during update.' });
+    }
+ });
+ 
+ 
 app.delete('/deleteData/:id',verifyToken,async(req,res)=>{
     const deleteData= await schema_2.findByIdAndDelete(req.params.id)
     res.json("delete Successfully")

@@ -8,12 +8,6 @@ const valid=new mongoose.Schema({
     message:String,
     imageUrl: String,
      Title: String,
-     Price:String,
-     Description: String,
-     Category: String,
-     Availability: {
-       type: String,
-       enum: ['Available', 'NotAvailable']
-  }
+    
 })
 module.exports=mongoose.model("message",valid)
